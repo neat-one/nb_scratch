@@ -1,10 +1,11 @@
 #Import the relevant packages.
 # import nltk
+from distutils.log import Log
 from nltk.corpus import movie_reviews
 from nltk.tokenize import word_tokenize
 import math
 from collections import Counter
-# from nltk.corpus import stopwords
+from nltk.corpus import stopwords
 import random
 
 random.seed(42)
@@ -40,7 +41,7 @@ def split_folds():
     return fold_dict
     
 
-def get_vocab_train(input_train='train fold1', input_test='test fold3'):
+def get_vocab_train(input_train='train fold1 fold2', input_test='test fold3'):
     '''Put the words from the review files into a dictionary with the vocab 
     name as the key and the vocabulary list as the values.'''
 
@@ -53,13 +54,12 @@ def get_vocab_train(input_train='train fold1', input_test='test fold3'):
     if 'fold1' in input_train.split()[1:]:
         vocab_dict['pos'].append(fold_dict['fold1_pos'])
         vocab_dict['neg'].append(fold_dict['fold1_neg'])
-    if 'fold2' == input_test.split()[1]:
+    if 'fold2' == input_train.split()[1:]:
         vocab_dict['pos'].append(fold_dict['fold2_pos'])
         vocab_dict['neg'].append(fold_dict['fold2_neg'])
-    if 'fold3' == input_test.split()[1]:
+    if 'fold3' == input_train.split()[1:]:
         vocab_dict['pos'].append(fold_dict['fold3_pos'])
         vocab_dict['neg'].append(fold_dict['fold3_neg'])
-
 
     train_doc_len_pos = len([doc for fold in vocab_dict['pos'] for doc in fold])
     train_doc_len_neg = len([doc for fold in vocab_dict['neg'] for doc in fold])
@@ -97,8 +97,10 @@ def train_nb():
 
         for word in vocab:
             log_likelihood[current_class][word] = math.log2(
+                #maybe need to add if else for whether it is in vocab_dict[current_class][word] (0 if not)?
                 (vocab_dict[current_class][word] + 1) / (word_count_class + len(vocab))
             )
+
 
     return log_prior, log_likelihood, vocab_dict
 
@@ -107,12 +109,13 @@ def test_nb(file_sent):
     true_sent = file_sent[1]
     test_file = file_sent[0]
     log_prior, log_likelihood, vocab_dict = train_nb()
-    sum_prob = 0
+    
     vocab = list(vocab_dict['full_vocab'].keys())
 
     prob_classes = {}
 
     for current_class in movie_reviews.categories():
+        sum_prob = 0
         for word in movie_reviews.words(test_file):
             word = word.lower()
             if word in vocab:
